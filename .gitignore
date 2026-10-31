@@ -33,3 +33,6 @@ Thumbs.db
 .cache/
 test_data/
 local_*.json
+
+# 本地测试脚本（不随插件发布）
+.test/
