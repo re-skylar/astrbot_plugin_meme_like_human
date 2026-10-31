@@ -42,8 +42,47 @@ ASK_PATTERN = re.compile(
 #: 匹配时忽略的字符（保留字母数字汉字）
 _IGNORE_RE = re.compile(r"[\s\u3000,，.。!！?？;；:：'\"“”‘’()（）\[\]【】<>《》~～`@#$%^&*+=|/\\-]+")
 
-MIN_TERM_LEN = 2
+MIN_TERM_LEN = 1
+"""最短词条长度。
+
+允许单字（草、淦、典、蚌 都是真梗），但单字误报率高，
+所以单字只在「独立成词」时才算命中 —— 见 _is_standalone。
+"""
+
+#: 单字命中时，若紧邻这些常用字则视为普通用字，不算梗
+#: 说明：这张表越大越保守（少误报），越小越激进（多命中）。取平衡。
+_COMMON_NEIGHBORS = set(
+    # 高频虚词与代词
+    "的了在是有和人这那中大为上个国我以要他时来用们生到作地于出就分对成会"
+    "可主发年动同工也能下过子说产种面而方后多定行学法所民得经十三之进着等部"
+    "度家电力里如水化高自二理起小物现实加量都两体制机当使点从业本去把性好应"
+    "开它合还因由其些然前外天政四日社义事平形相全表间样与关各重新线内数正心"
+    "反你明看原又么利比或但质气第向道命此变条只没结解问意建月公无系军很情者"
+    "最立代想已通并提直题党程展五果料象员革位入常文总次品式活设及管特件长求"
+    "老头基资边流路级少图山统接知较将组见计别她手角期根论运农指几九区强放决"
+    "西被干做必战先回则任取据处队南给色光门即保治北造百规热领七海口东导器压"
+    "志世金增争济阶油思术极交受联什认六共权收证改清己美再采转更单风切打白教"
+    "速花带安场身车例真务具万每目至达走积示议声报斗完类八离华名确才科张信马"
+    "节话米整空元况今集温传土许步群广石记需段研界拉林律叫且究观越织装影算低"
+    "持音众书布复容儿须际商非验连断深难近矿千周委素技备半办青省列习响约支般"
+    "史感劳便团往酸历市克何除消构府称太准精值号率族维划选标写存候毛亲快效斯"
+    "院查江型眼王按格养易置派层片始却专状育厂京识适属圆包住调满县局照参红细"
+    "引听铁严龙飞"
+    # 高频副词与连接词
+    "很挺真太最更还也比较稍微几乎将近大约的确确实简直实在本来原本居然竟然"
+    "当然果然显然必然自然突然忽然立刻马上顿时随即接着然后于是因此所以但是"
+    "不过可是然而而且并且况且何况甚至乃至至于关于对于由于为了按照根据依据"
+    # 常见动词与形容词
+    "说讲道问答想觉得认为希望打算准备开始结束继续停止变化成为叫做算是"
+    "好坏多少大小长短高低快慢新旧美丑强弱难易真假对错行不行可以能够"
+    # 网络高频字
+    "咋啥啥啥嘛嘞呐捏噢嗷嗯哦呵嘿哈嘻唉哎诶额咦咩咯啦喔哟"
+)
+
 MAX_MATCH_PER_MSG = 5
+
+#: 单条消息最多计入几个单字梗（单字噪声大，限流保精度）
+MAX_SINGLE_MATCH = 1
 
 
 class MemeKnowledge:
@@ -252,9 +291,16 @@ class MemeKnowledge:
         if not text or not self._records:
             return []
 
-        clean = _IGNORE_RE.sub("", text)
+        clean, orig_pos = _clean_with_pos(text)
         if not clean:
             return []
+
+        # 边界：清洗后下标 i 与 i+1 之间在原文中隔着标点
+        boundary: set[int] = set()
+        for k in range(len(orig_pos) - 1):
+            if orig_pos[k + 1] - orig_pos[k] > 1:
+                boundary.add(k)  # k 之后是边界
+                boundary.add(k + 1)  # k+1 之前是边界
 
         # 1) 收集候选（含所有起始位置）
         candidates: list[tuple[int, int, tuple]] = []  # (起始, 长度, 记录元组)
@@ -274,6 +320,7 @@ class MemeKnowledge:
         used = [False] * n
         found: list[dict] = []
         seen_terms: set[str] = set()
+        single_count = 0
 
         for start, length, (term, rid, meaning, origin, year) in candidates:
             if len(found) >= limit:
@@ -283,6 +330,13 @@ class MemeKnowledge:
             end = start + length
             if any(used[start:end]):
                 continue
+            # 单字梗必须「独立成词」，否则「中」「好」这类普通用字会疯狂误命中
+            if length == 1:
+                if single_count >= MAX_SINGLE_MATCH:
+                    continue
+                if not _is_standalone(clean, start, boundary):
+                    continue
+                single_count += 1
             used[start:end] = [True] * length
             seen_terms.add(term)
             found.append(
@@ -292,6 +346,7 @@ class MemeKnowledge:
                     "meaning": meaning,
                     "origin": origin,
                     "year": year,
+                    "pos": start,
                 }
             )
 
@@ -498,6 +553,59 @@ class MemeKnowledge:
     @property
     def attribution(self) -> dict[str, Any]:
         return self._license_info
+
+
+def _clean_with_pos(text: str) -> tuple[str, list[int]]:
+    """清洗文本并记录每个保留字符在原文中的位置。
+
+    这样单字梗判断「前后是否紧邻常用字」时，可以回到原文看真实邻居，
+    而不是在剥离了标点的字符串上误判（「笑死，草」应算梗，不该被当成「死草」）。
+    """
+    chars: list[str] = []
+    pos: list[int] = []
+    for i, ch in enumerate(text):
+        if _IGNORE_RE.match(ch):
+            continue
+        chars.append(ch)
+        pos.append(i)
+    return "".join(chars), pos
+
+
+def _is_standalone(text: str, pos: int, boundary: set[int] | None = None) -> bool:
+    """单字词条是否「独立成词」。
+
+    规则：前后都不能紧邻常用字，否则视为普通用字而非梗。
+    例：「草，这也行」里的「草」算梗；「太好了」里的「太」不算。
+    连续相同单字（如「哈哈哈」）也允许。
+
+    Args:
+        text: 清洗后的文本
+        pos: 单字在 text 中的下标
+        boundary: 可选的「边界下标集合」—— 这些位置在原文中是标点/空白，
+                  遇到它们即视为独立成词
+    """
+    if not text or pos < 0 or pos >= len(text):
+        return False
+
+    ch = text[pos]
+
+    # 边界直接判定
+    if boundary:
+        if (pos - 1) in boundary or (pos + 1) in boundary:
+            return True
+
+    prev_ch = text[pos - 1] if pos > 0 else ""
+    next_ch = text[pos + 1] if pos + 1 < len(text) else ""
+
+    # 前后紧邻同一个字 → 视为强调/叠用，算梗
+    if prev_ch == ch or next_ch == ch:
+        return True
+    # 前后紧邻常用字 → 普通用字
+    if prev_ch and prev_ch in _COMMON_NEIGHBORS:
+        return False
+    if next_ch and next_ch in _COMMON_NEIGHBORS:
+        return False
+    return True
 
 
 def _normalize(s: str) -> str:
