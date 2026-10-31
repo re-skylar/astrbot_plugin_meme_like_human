@@ -1,0 +1,34 @@
+name: astrbot_plugin_meme_like_human
+display_name: 像人一样玩梗
+short_desc: 内置万条梗库，让 bot 听懂群里的梗和黑话
+desc: |
+  **像人一样玩梗** —— 让机器人真正听懂中文网络梗和群内黑话，而不是硬猜。
+
+  核心能力：
+  - **内置 10,808 条中文网络梗词库**，本地毫秒级查询，零网络依赖
+  - **被动注入**：聊天中自动识别梗并注入语义，模型自然理解
+  - **群内黑话自学习**：从聊天记录挖掘本群黑话（双路对照判定）
+  - **兜底搜索**：未收录的梗可走 DeepSeek 搜索，并写回本地自学习
+
+  指令：
+  - `/玩梗 <词>` 查询梗的完整释义
+  - `/玩梗库` 查看词库统计
+  - `/黑话库` 查看/管理已学会的群内黑话（管理员）
+
+  > 词库来源：[chinese-meme-dict](https://github.com/re-skylar/chinese-meme-dict)（CC BY 4.0）
+  > 作者：sky（出力）、楠（出token）
+  > 黑话双路对照思路参考 [MaiBot](https://github.com/Mai-with-u/MaiBot)（GPL-3.0），代码独立实现。
+version: 1.0.0
+author: re-skylar
+repo: https://github.com/re-skylar/astrbot_plugin_meme_like_human
+astrbot_version: ">=4.17.0"
+support_platforms:
+  - aiocqhttp
+  - qq_official
+  - telegram
+  - discord
+tags:
+  - meme
+  - jargon
+  - slang
+social_link: https://github.com/re-skylar

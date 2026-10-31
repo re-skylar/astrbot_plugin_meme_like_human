@@ -1,0 +1,53 @@
+像人一样玩梗 (astrbot_plugin_meme_like_human)
+Copyright (C) 2026 re-skylar
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+================================================================================
+第三方内容与许可 / Third-Party Notices
+================================================================================
+
+1. 词库数据 data/memes.json(.gz)
+   ------------------------------------------------------------------
+   名称：chinese-meme-dict — 中文网络梗词库
+   许可：Creative Commons Attribution 4.0 International (CC BY 4.0)
+   作者：sky（出品/出力）、楠（Token赞助）
+   来源：https://github.com/re-skylar/chinese-meme-dict
+   全文：https://creativecommons.org/licenses/by/4.0/legalcode
+
+   说明：词库中的释义文本由 AI 原创撰写，未复制任何百科或网站原文。
+   根据 CC BY 4.0，使用时必须保留署名。本插件在以下位置履行署名义务：
+     - 本 NOTICE 文件
+     - README.md
+     - /玩梗库 指令的输出
+     - 启动日志
+
+   注意：CC BY 4.0 仅覆盖 data/ 目录下的词库数据。
+   代码部分（*.py 等）适用前述 AGPL-3.0，不适用 CC BY 4.0。
+
+2. 设计思路参考
+   ------------------------------------------------------------------
+   「双路对照」判断圈内黑话的设计思路参考了 MaiBot
+   https://github.com/Mai-with-u/MaiBot
+   许可：GNU General Public License v3.0
+
+   说明：本项目对该思路进行了独立重新实现（clean-room），
+   未复制 MaiBot 的任何代码或文本。MaiBot 的 GPL-3.0 代码与本项目
+   AGPL-3.0 代码在许可上兼容（GPLv3 §13 允许与 AGPLv3 组合）。
+
+3. AstrBot 官方模板
+   ------------------------------------------------------------------
+   插件骨架参考 Soulter/helloworld
+   https://github.com/Soulter/helloworld
+   许可：AGPL-3.0

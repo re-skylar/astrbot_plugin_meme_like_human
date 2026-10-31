@@ -1,0 +1,27 @@
+============================================================
+[OK  ] 定义了 Star 子类  ['MemeLikeHumanPlugin']
+[OK  ] @register 未使用（已废弃）
+[OK  ] 方法 initialize
+[OK  ] 方法 terminate
+[OK  ] 方法 inject_context
+[OK  ] 方法 collect_message
+[OK  ] 命令已注册  ['玩梗', '玩梗库', '黑话库']
+[OK  ] on_llm_request 已使用
+[OK  ] 注入边界标记
+[OK  ] metadata name
+[OK  ] metadata display_name
+[OK  ] metadata version
+[OK  ] metadata author
+[OK  ] metadata repo
+[OK  ] name 以 astrbot_plugin_ 开头  astrbot_plugin_meme_like_human
+[OK  ] 配置项数量  19
+[OK  ] 配置项类型均合法
+[OK  ] 配置项均有描述
+[OK  ] 词库 gz 存在
+[OK  ] LICENSE 存在
+[OK  ] NOTICE 存在
+[OK  ] NOTICE 含 sky
+[OK  ] NOTICE 含 楠
+============================================================
+共 23 项，失败 0 项
+=== 集成检查全部通过 ===
